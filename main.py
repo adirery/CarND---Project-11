@@ -161,7 +161,8 @@ def run_tests():
     tests.test_for_kitti_dataset(data_dir)
 
 def run():
-    # Download pretrained vgg model if needed
+    # Download pretrained vgg model and dataset if needed
+    helper.maybe_download_kitti_data(data_dir)
     helper.maybe_download_pretrained_vgg(data_dir)
 
     # OPTIONAL: Train and Inference on the cityscapes dataset instead of the Kitti dataset.
@@ -194,5 +195,5 @@ def run():
 
 
 if __name__ == '__main__':
-    run_tests()
+    #run_tests()
     run()

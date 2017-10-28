@@ -10,7 +10,9 @@ import tensorflow as tf
 from glob import glob
 from urllib.request import urlretrieve
 from tqdm import tqdm
-
+import project_tests as tests
+import wget
+import zipfile
 
 class DLProgress(tqdm):
     last_block = 0
@@ -58,6 +60,21 @@ def maybe_download_pretrained_vgg(data_dir):
         os.remove(os.path.join(vgg_path, vgg_filename))
 
 
+def maybe_download_kitti_data(data_dir):
+    """
+    Download and extract dataset if it doesn't exist
+    :param data_dir: Directory to download the dataset to
+    """
+    try:
+        tests.test_for_kitti_dataset(data_dir)
+        print("Dataset available")
+    except:
+        print("Dataset not available...downloading now")
+        dataset = wget.download("http://kitti.is.tue.mpg.de/kitti/data_road.zip")
+        zip = ZipFile(dataset)
+        zip.extractall()
+        
+    
 def gen_batch_function(data_folder, image_shape):
     """
     Generate function to create batches of training data
