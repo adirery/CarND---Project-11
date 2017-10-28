@@ -16,7 +16,22 @@ if not tf.test.gpu_device_name():
 else:
     print('Default GPU Device: {}'.format(tf.test.gpu_device_name()))
 
+# initialize variables
+IMAGE_SHAPE = (160, 576)
+NUMBER_OF_CLASSES = 2
+EPOCHS = 6
+BATCH_SIZE = 10
+LEARNING_RATE = 0.001
+KEEP_PROB = 0.5
 
+runs_dir = './runs'
+data_dir = './data'
+vgg_path = os.path.join(data_dir, 'vgg')
+
+# PLACEHOLDER TENSORS
+correct_label = tf.placeholder(tf.float32, [None, IMAGE_SHAPE[0], IMAGE_SHAPE[1], NUMBER_OF_CLASSES])
+learning_rate = tf.placeholder(tf.float32)
+keep_prob = tf.placeholder(tf.float32)
 
 def load_vgg(sess, vgg_path):
     """
@@ -33,15 +48,17 @@ def load_vgg(sess, vgg_path):
     vgg_layer4_out_tensor_name = 'layer4_out:0'
     vgg_layer7_out_tensor_name = 'layer7_out:0'
     
+    print("set the names..now loading model")
     tf.saved_model.loader.load(sess, [vgg_tag], vgg_path)
+    print("model loaded")
     graph = tf.get_default_graph()
-    w1 = graph.get_tensor_by_name(vgg_input_tensor_name)
-    keep = graph.get_tensor_by_name(vgg_keep_prob_tensor_name)
-    w3 = graph.get_tensor_by_name(vgg_layer3_out_tensor_name)
-    w4 = graph.get_tensor_by_name(vgg_layer4_out_tensor_name)
-    w7 = graph.get_tensor_by_name(vgg_layer7_out_tensor_name)
+    image_input = graph.get_tensor_by_name(vgg_input_tensor_name)
+    keep =        graph.get_tensor_by_name(vgg_keep_prob_tensor_name)
+    layer_3 =     graph.get_tensor_by_name(vgg_layer3_out_tensor_name)
+    layer_4 =     graph.get_tensor_by_name(vgg_layer4_out_tensor_name)
+    layer_7 =     graph.get_tensor_by_name(vgg_layer7_out_tensor_name)
     
-    return w1, keep, w3, w4, w7
+    return image_input, keep, layer_3, layer_4, layer_7
 
 
 def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
@@ -117,8 +134,8 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
             feed = { 
                     input_image: images,
                     correct_label: labels,
-                    keep_prob: keep_prob,
-                    learning_rate: learning_rate 
+                    keep_prob: KEEP_PROB,
+                    learning_rate: LEARNING_RATE 
                     }
             
             _, partial_loss = sess.run([train_op, cross_entropy_loss], feed_dict = feed)
@@ -140,20 +157,10 @@ def run_tests():
     tests.test_load_vgg(load_vgg, tf)
     tests.test_layers(layers)
     tests.test_optimize(optimize)
-    #tests.test_train_nn(train_nn)
+    tests.test_train_nn(train_nn)
     tests.test_for_kitti_dataset(data_dir)
 
 def run():
-    # initialize variables
-    num_classes = 2
-    learning_rate = 0.001
-    keep_prob = 0.5
-    
-    image_shape = (160, 576)
-    runs_dir = './runs'
-    data_dir = './data'
-    vgg_path = os.path.join(data_dir, 'vgg')
-
     # Download pretrained vgg model if needed
     helper.maybe_download_pretrained_vgg(data_dir)
 
@@ -163,19 +170,22 @@ def run():
 
     with tf.Session() as sess:
         # Create function to get batches
-        get_batches_fn = helper.gen_batch_function(os.path.join(data_dir, 'data_road/training'), image_shape)
-
+        get_batches_fn = helper.gen_batch_function(os.path.join(data_dir, 'data_road/training'), IMAGE_SHAPE)
+        
         # OPTIONAL: Augment Images for better results
         #  https://datascience.stackexchange.com/questions/5224/how-to-prepare-augment-images-for-neural-network
 
         # TODO: Build NN using load_vgg, layers, and optimize function
         image_input, keep_prob, vgg_layer3_out, vgg_layer4_out, vgg_layer7_out = load_vgg(sess, vgg_path)
-        upsample_output = layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes)
-        logits, train_op, cross_entropy_loss = optimize(nn_last_layer, correct_label, learning_rate, num_classes)
+        upsample_output = layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, NUM_CLASSES)
+        logits, train_op, cross_entropy_loss = optimize(nn_last_layer, correct_label, learning_rate, NUM_CLASSES)
         
-        
+        # Initialize all variables
+        session.run(tf.global_variables_initializer())
+        session.run(tf.local_variables_initializer())
         
         # TODO: Train NN using the train_nn function
+        train_nn(sess, EPOCHS, BATCH_SIZE, get_batches_fn, train_op, cross_entropy_loss, image_input, correct_label, keep_prob, learning_rate)
 
         # TODO: Save inference data using helper.save_inference_samples
         #  helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
@@ -184,4 +194,5 @@ def run():
 
 
 if __name__ == '__main__':
+    run_tests()
     run()
