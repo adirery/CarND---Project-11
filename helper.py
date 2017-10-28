@@ -11,7 +11,6 @@ from glob import glob
 from urllib.request import urlretrieve
 from tqdm import tqdm
 import project_tests as tests
-import wget
 
 class DLProgress(tqdm):
     last_block = 0
@@ -69,14 +68,17 @@ def maybe_download_kitti_data(data_dir):
         print("Dataset available")
     except:
         print("Dataset not available...downloading now")
-        with DLProgress(unit='B', unit_scale=True, miniters=1) as pbar:
-            urlretrieve('http://kitti.is.tue.mpg.de/kitti/data_road.zip', os.path.join(data_dir, "data_road.zip"), pbar.hook)
-        zip_ref = ZipFile(dataset)
+        if not os.path.exists(os.path.join(data_dir, "data_road.zip")):
+            with DLProgress(unit='B', unit_scale=True, miniters=1) as pbar:
+                urlretrieve('http://kitti.is.tue.mpg.de/kitti/data_road.zip', os.path.join(data_dir, "data_road.zip"), pbar.hook)
+        
+        print('Extracting dataset...')
+        zip_ref = zipfile.ZipFile(os.path.join(data_dir, "data_road.zip"), 'r')
         zip_ref.extractall(data_dir)
         zip_ref.close()
         
         # Remove zip file to save space
-        os.remove(os.path.join(data_dir, dataset))
+        os.remove(os.path.join(data_dir, "data_road.zip"))
         
     
 def gen_batch_function(data_folder, image_shape):

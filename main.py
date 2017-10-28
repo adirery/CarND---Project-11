@@ -82,7 +82,7 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     upsample_layer2 = tf.layers.conv2d_transpose(skip_layer1, num_classes, 4, 2, padding='same', kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
     skip_layer2 = tf.add(upsample_layer2, conv_layer3)
     
-    upsample_output = tf.layers.conv2d_transpose(skip_layer2, num_classes, 16, 2, padding='same', kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
+    upsample_output = tf.layers.conv2d_transpose(skip_layer2, num_classes, 16, 8, padding='same', kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
     
     
     return upsample_output
@@ -178,22 +178,23 @@ def run():
 
         # TODO: Build NN using load_vgg, layers, and optimize function
         image_input, keep_prob, vgg_layer3_out, vgg_layer4_out, vgg_layer7_out = load_vgg(sess, vgg_path)
-        upsample_output = layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, NUM_CLASSES)
-        logits, train_op, cross_entropy_loss = optimize(nn_last_layer, correct_label, learning_rate, NUM_CLASSES)
+        upsample_output = layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, NUMBER_OF_CLASSES)
+        logits, train_op, cross_entropy_loss = optimize(upsample_output, correct_label, learning_rate, NUMBER_OF_CLASSES)
         
         # Initialize all variables
-        session.run(tf.global_variables_initializer())
-        session.run(tf.local_variables_initializer())
+        sess.run(tf.global_variables_initializer())
+        sess.run(tf.local_variables_initializer())
         
         # TODO: Train NN using the train_nn function
         train_nn(sess, EPOCHS, BATCH_SIZE, get_batches_fn, train_op, cross_entropy_loss, image_input, correct_label, keep_prob, learning_rate)
 
         # TODO: Save inference data using helper.save_inference_samples
         #  helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
-
+        helper.save_inference_samples(runs_dir, data_dir, sess, IMAGE_SHAPE, logits, keep_prob, image_input)
+        
         # OPTIONAL: Apply the trained model to a video
 
 
 if __name__ == '__main__':
-    #run_tests()
+    run_tests()
     run()
