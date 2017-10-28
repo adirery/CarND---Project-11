@@ -19,13 +19,14 @@ else:
 # initialize variables
 IMAGE_SHAPE = (160, 576)
 NUMBER_OF_CLASSES = 2
-EPOCHS = 6
-BATCH_SIZE = 10
-LEARNING_RATE = 0.001
-KEEP_PROB = 0.5
+EPOCHS = 20
+BATCH_SIZE = 2
+LEARNING_RATE = 0.0001
+KEEP_PROB = 0.85
 
 runs_dir = './runs'
 data_dir = './data'
+logs_dir = './logs'
 vgg_path = os.path.join(data_dir, 'vgg')
 
 # PLACEHOLDER TENSORS
@@ -48,10 +49,9 @@ def load_vgg(sess, vgg_path):
     vgg_layer4_out_tensor_name = 'layer4_out:0'
     vgg_layer7_out_tensor_name = 'layer7_out:0'
     
-    print("set the names..now loading model")
     tf.saved_model.loader.load(sess, [vgg_tag], vgg_path)
-    print("model loaded")
     graph = tf.get_default_graph()
+    
     image_input = graph.get_tensor_by_name(vgg_input_tensor_name)
     keep =        graph.get_tensor_by_name(vgg_keep_prob_tensor_name)
     layer_3 =     graph.get_tensor_by_name(vgg_layer3_out_tensor_name)
@@ -168,7 +168,7 @@ def run():
     # OPTIONAL: Train and Inference on the cityscapes dataset instead of the Kitti dataset.
     # You'll need a GPU with at least 10 teraFLOPS to train on.
     #  https://www.cityscapes-dataset.com/
-
+     
     with tf.Session() as sess:
         # Create function to get batches
         get_batches_fn = helper.gen_batch_function(os.path.join(data_dir, 'data_road/training'), IMAGE_SHAPE)
@@ -184,10 +184,21 @@ def run():
         # Initialize all variables
         sess.run(tf.global_variables_initializer())
         sess.run(tf.local_variables_initializer())
+        saver = tf.train.Saver()
+        summary_writer = tf.summary.FileWriter(logs_dir, sess.graph)
+        
+        ckpt = tf.train.get_checkpoint_state(logs_dir)
+        if ckpt and ckpt.model_checkpoint_path:
+            saver.restore(sess, ckpt.model_checkpoint_path)
+
+        print("Model restored...")
         
         # TODO: Train NN using the train_nn function
         train_nn(sess, EPOCHS, BATCH_SIZE, get_batches_fn, train_op, cross_entropy_loss, image_input, correct_label, keep_prob, learning_rate)
-
+        
+        # Save Model
+        saver.save(sess, logs_dir + "model.ckpt")
+        
         # TODO: Save inference data using helper.save_inference_samples
         #  helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
         helper.save_inference_samples(runs_dir, data_dir, sess, IMAGE_SHAPE, logits, keep_prob, image_input)
