@@ -65,7 +65,7 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     upsample_layer2 = tf.layers.conv2d_transpose(skip_layer1, num_classes, 4, 2, padding='same', kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
     skip_layer2 = tf.add(upsample_layer2, conv_layer3)
     
-    upsample_output = tf.layers.conv2d_transpose(skip_layer1, num_classes, 16, 2, padding='same', kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
+    upsample_output = tf.layers.conv2d_transpose(skip_layer2, num_classes, 16, 2, padding='same', kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
     
     
     return upsample_output
