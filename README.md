@@ -24,7 +24,7 @@ The dataset consists of 289 training and 290 test images. It contains three diff
 
 ## Results
 Although with 300 training images the network already performs quite good, there's still a lot of room for improvement. Interestingly the L2-regularization & kernel initialization tunings led to the best results ultimately, i.e. prior to that the full image was classified whereas with regularization the results were much better. Below some sample images after inference:
-![sample_image_1](https://github.com/adirery/CarND---Project-11/sample_pictures/um_000013.png)
+![sample_image_1](https://github.com/adirery/CarND---Project-11/blob/master/sample_pictures/um_000013.png)
 
 ## Outlook
 The network is final, however the training can be optimized:
